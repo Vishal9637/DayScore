@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/DayScore/static/css/main.c389f99c.css",
+    "main.js": "/DayScore/static/js/main.9df09eb9.js",
+    "index.html": "/DayScore/index.html",
+    "main.c389f99c.css.map": "/DayScore/static/css/main.c389f99c.css.map",
+    "main.9df09eb9.js.map": "/DayScore/static/js/main.9df09eb9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c389f99c.css",
+    "static/js/main.9df09eb9.js"
+  ]
+}
