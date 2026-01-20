@@ -26,7 +26,10 @@ const FocusPlanner = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const q = query(
         collection(db, "dailyTasks"),
@@ -40,7 +43,7 @@ const FocusPlanner = () => {
         const data = snapshot.docs[0];
         const rawTasks = data.data().tasks;
 
-        // ✅ NORMALIZE OLD + NEW DATA
+        // ✅ Normalize old (string) + new (object) tasks
         const normalizedTasks = rawTasks.map((task) =>
           typeof task === "string"
             ? { text: task, completed: false }
@@ -55,7 +58,7 @@ const FocusPlanner = () => {
     };
 
     fetchTasks();
-  }, []);
+  }, [today]); // ✅ ESLint fix
 
   /* ✏️ Handle input */
   const handleChange = (index, value) => {

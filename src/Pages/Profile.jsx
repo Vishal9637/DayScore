@@ -90,10 +90,9 @@ const Profile = () => {
   return (
     <div className="profile-page fade-in">
       <div className="profile-card slide-up">
-
         <h2 className="profile-title">Edit Profile</h2>
 
-        {/* ✅ BALANCED AVATAR */}
+        {/* AVATAR */}
         <label className="ig-avatar">
           <img
             src={
@@ -174,7 +173,7 @@ const Profile = () => {
         {error && <p className="profile-error">{error}</p>}
       </div>
 
-      {/* 🎨 FINAL CSS */}
+      {/* 🎨 CSS */}
       <style>{`
         .profile-page {
           min-height: 100vh;
@@ -204,7 +203,6 @@ const Profile = () => {
           margin-bottom: 1.4rem;
         }
 
-        /* ⭐ PERFECT BALANCE AVATAR */
         .ig-avatar {
           width: 88px;
           height: 88px;
@@ -292,6 +290,7 @@ const Profile = () => {
           font-size: 0.8rem;
         }
 
+        /* 📱 MOBILE FIX */
         @media (max-width: 480px) {
           .ig-avatar {
             width: 76px;
@@ -300,6 +299,10 @@ const Profile = () => {
 
           .profile-form {
             grid-template-columns: 1fr;
+          }
+
+          .profile-form div {
+            grid-column: span 1 !important;
           }
         }
       `}</style>

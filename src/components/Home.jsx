@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import { auth, db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [user, setUser] = useState(null);
-  const [mood, setMood] = useState("");
-  const [tip, setTip] = useState("");
   const navigate = useNavigate();
 
   /* 🔐 Track auth state */
@@ -17,36 +14,6 @@ const Home = () => {
     });
     return () => unsub();
   }, []);
-
-  /* 💡 Daily Smart Tip */
-  useEffect(() => {
-    const tips = [
-      "💧 Drink water every hour",
-      "🛌 Avoid screens 30 minutes before sleep",
-      "📚 Study in 45-minute focus blocks",
-      "🚶 Take a 5-minute walk",
-      "😌 Deep breathing helps reduce stress",
-    ];
-    const today = new Date().getDate();
-    setTip(tips[today % tips.length]);
-  }, []);
-
-  /* 🙂 Save Mood */
-  const saveMood = async (selectedMood) => {
-    if (!user) {
-      alert("Login required to save mood");
-      return;
-    }
-
-    setMood(selectedMood);
-
-    await addDoc(collection(db, "dailyMood"), {
-      uid: user.uid,
-      mood: selectedMood,
-      date: new Date().toISOString().split("T")[0],
-      createdAt: new Date(),
-    });
-  };
 
   /* 🔗 Feature navigation */
   const handleFeatureClick = (path) => {
@@ -67,7 +34,7 @@ const Home = () => {
             Welcome to <span>DayScore</span> 🌙
           </h1>
           <p className="hero-subtitle">
-            Track your mood, productivity & balance your day intelligently.
+            Track your productivity, focus & balance your day intelligently.
           </p>
 
           {user && (
@@ -79,10 +46,6 @@ const Home = () => {
             </button>
           )}
         </div>
-
-        
-
-       
 
         {/* FEATURES */}
         <div className="feature-grid">
@@ -105,7 +68,7 @@ const Home = () => {
             <span className="feature-icon">⏰</span>
             <p className="feature-title">Smart Study Timer</p>
             <small className="feature-desc">
-              Pomodoro-based focus & break reminders
+              Focus & break sessions with streak tracking
             </small>
           </div>
 
@@ -116,7 +79,7 @@ const Home = () => {
             <span className="feature-icon">🔥</span>
             <p className="feature-title">Consistency Streak</p>
             <small className="feature-desc">
-              Maintain daily streaks & stay motivated
+              Build daily discipline & habits
             </small>
           </div>
 
