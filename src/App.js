@@ -12,6 +12,9 @@ import FocusPlanner from "./Pages/FocusPlanner.jsx";
 import StudyTimer from "./Pages/StudyTimer.jsx";
 import Streak from "./Pages/Streak.jsx";
 
+import CampusCirclePage from "./Pages/CampusCircle/index.jsx";
+import PostDetails from "./Pages/CampusCircle/PostDetails.jsx";
+
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 const App = () => {
@@ -67,6 +70,25 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Streak />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🌍 Campus Circle (Protected) */}
+        <Route
+          path="/campus-circle"
+          element={
+            <ProtectedRoute>
+              <CampusCirclePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/campus-circle/post/:id"
+          element={
+            <ProtectedRoute>
+              <PostDetails />
             </ProtectedRoute>
           }
         />

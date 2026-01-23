@@ -45,11 +45,11 @@ const Navbar = () => {
   };
 
   const isActive = (path) =>
-    location.pathname === path
+    location.pathname.startsWith(path)
       ? "text-sky-400"
       : "hover:text-sky-400";
 
-  const Avatar = ({ size = "w-9 h-9" }) => (
+  const Avatar = ({ size = "w-9 h-9" }) =>
     profileImg ? (
       <img
         src={profileImg}
@@ -63,8 +63,7 @@ const Navbar = () => {
       >
         {user?.email?.[0]?.toUpperCase()}
       </div>
-    )
-  );
+    );
 
   return (
     <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
@@ -93,6 +92,10 @@ const Navbar = () => {
             <>
               <Link className={isActive("/dashboard")} to="/dashboard">
                 Dashboard
+              </Link>
+
+              <Link className={isActive("/campus-circle")} to="/campus-circle">
+                Campus Circle
               </Link>
 
               <Link className={isActive("/profile")} to="/profile">
@@ -153,6 +156,14 @@ const Navbar = () => {
                 onClick={() => setMenuOpen(false)}
               >
                 Dashboard
+              </Link>
+
+              <Link
+                to="/campus-circle"
+                className={`block ${isActive("/campus-circle")}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Campus Circle
               </Link>
 
               <Link
