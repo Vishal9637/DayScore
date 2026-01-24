@@ -58,12 +58,12 @@ const CreatePost = () => {
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 16px;
           padding: 18px;
-          margin-bottom: 24px;
+          margin-block-end: 24px;
           box-shadow: 0 10px 25px rgba(0,0,0,0.25);
         }
 
         .cc-title {
-          margin-bottom: 12px;
+          margin-block-end: 12px;
           font-size: 1.1rem;
           font-weight: 600;
           color: #e5e7eb;
