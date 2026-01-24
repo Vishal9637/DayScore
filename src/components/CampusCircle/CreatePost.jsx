@@ -1,11 +1,35 @@
-import { useState } from "react";
-import { auth } from "../../firebase";
+import { useEffect, useState } from "react";
+import { auth, db } from "../../firebase";
 import { createPost } from "../../services/campusCircleService";
+import { doc, getDoc } from "firebase/firestore";
 
 const CreatePost = () => {
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [profile, setProfile] = useState({
+    name: "Student",
+    photoURL: null,
+  });
+
+  // 🔥 Fetch current user profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        setProfile({
+          name: snap.data().name || "Student",
+          photoURL: snap.data().photoURL || null,
+        });
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
@@ -22,7 +46,27 @@ const CreatePost = () => {
   return (
     <>
       <div className="cc-card">
-        <h3 className="cc-title">🌍 Share with Campus Circle</h3>
+
+        {/* USER PREVIEW */}
+        <div className="cc-user-preview">
+          {anonymous ? (
+            <div className="cc-avatar-fallback">A</div>
+          ) : profile.photoURL ? (
+            <img
+              src={profile.photoURL}
+              alt={profile.name}
+              className="cc-avatar"
+            />
+          ) : (
+            <div className="cc-avatar-fallback">
+              {profile.name[0]?.toUpperCase()}
+            </div>
+          )}
+
+          <span className="cc-username">
+            {anonymous ? "Anonymous" : profile.name}
+          </span>
+        </div>
 
         <textarea
           className="cc-textarea"
@@ -58,15 +102,40 @@ const CreatePost = () => {
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 16px;
           padding: 18px;
-          margin-block-end: 24px;
+          margin-bottom: 24px;
           box-shadow: 0 10px 25px rgba(0,0,0,0.25);
         }
 
-        .cc-title {
-          margin-block-end: 12px;
-          font-size: 1.1rem;
+        .cc-user-preview {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+
+        .cc-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .cc-avatar-fallback {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg,#38bdf8,#818cf8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          color: #020617;
+        }
+
+        .cc-username {
           font-weight: 600;
-          color: #e5e7eb;
+          font-size: 0.9rem;
+          color: #38bdf8;
         }
 
         .cc-textarea {
@@ -80,11 +149,6 @@ const CreatePost = () => {
           color: #f8fafc;
           font-size: 0.95rem;
           outline: none;
-          transition: border 0.2s, box-shadow 0.2s;
-        }
-
-        .cc-textarea::placeholder {
-          color: #94a3b8;
         }
 
         .cc-textarea:focus {
@@ -107,47 +171,25 @@ const CreatePost = () => {
           gap: 8px;
           font-size: 0.9rem;
           color: #cbd5f5;
-          cursor: pointer;
-        }
-
-        .cc-checkbox input {
-          accent-color: #38bdf8;
-          cursor: pointer;
         }
 
         .cc-btn {
           padding: 8px 18px;
           border-radius: 10px;
-          background: linear-gradient(135deg, #38bdf8, #818cf8);
+          background: linear-gradient(135deg,#38bdf8,#818cf8);
           border: none;
           font-weight: 600;
           color: #020617;
           cursor: pointer;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .cc-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
         }
 
         .cc-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
-          transform: none;
-          box-shadow: none;
         }
 
-        /* 📱 Mobile Responsive */
+        /* 📱 Mobile */
         @media (max-width: 640px) {
-          .cc-card {
-            padding: 14px;
-          }
-
-          .cc-title {
-            font-size: 1rem;
-          }
-
           .cc-footer {
             flex-direction: column;
             align-items: stretch;
@@ -155,7 +197,6 @@ const CreatePost = () => {
 
           .cc-btn {
             width: 100%;
-            text-align: center;
           }
         }
       `}</style>

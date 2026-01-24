@@ -1,12 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { auth } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase";
-import {
-  listenToReplies,
-  addReply,
-} from "../../services/campusCircleService";
+import { listenToReplies, addReply } from "../../services/campusCircleService";
 
 const PostDetails = () => {
   const { id } = useParams();
@@ -30,26 +26,39 @@ const PostDetails = () => {
     const user = auth.currentUser;
     if (!user || !message.trim()) return;
 
-    setLoading(true);
-    await addReply(id, user, message);
-    setMessage("");
-    setLoading(false);
+    try {
+      setLoading(true);
+      await addReply(id, user, message);
+      setMessage("");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!post) return <p className="cc-loading">Loading...</p>;
 
   return (
     <>
-      <div className="cc-page">
+      <div className="pd-wrapper">
 
         {/* POST */}
-        <div className="cc-post-card">
-          <span className="cc-user">{post.userName}</span>
-          <p className="cc-post-content">{post.content}</p>
+        <div className="pd-post">
+          <div className="pd-user">
+            {post.userAvatar ? (
+              <img src={post.userAvatar} className="pd-avatar" alt="" />
+            ) : (
+              <div className="pd-avatar-fallback">
+                {post.userName?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <span className="pd-name">{post.userName}</span>
+          </div>
+
+          <p className="pd-content">{post.content}</p>
         </div>
 
         {/* REPLY BOX */}
-        <div className="cc-reply-box">
+        <div className="pd-reply-box">
           <textarea
             placeholder="Share your experience or advice..."
             value={message}
@@ -61,140 +70,183 @@ const PostDetails = () => {
         </div>
 
         {/* REPLIES */}
-        <div className="cc-replies">
+        <div className="pd-replies">
           <h4>Replies</h4>
 
           {replies.length === 0 && (
-            <p className="cc-empty">No replies yet. Be the first 🤍</p>
+            <p className="pd-empty">
+              No replies yet. Be the first 🤍
+            </p>
           )}
 
           {replies.map((r) => (
-            <div key={r.id} className="cc-reply-card">
-              <span className="cc-reply-user">{r.userName}</span>
-              <p>{r.message}</p>
+            <div key={r.id} className="pd-reply-card">
+              <div className="pd-user">
+                {r.userAvatar ? (
+                  <img src={r.userAvatar} className="pd-avatar sm" alt="" />
+                ) : (
+                  <div className="pd-avatar-fallback sm">
+                    {r.userName?.[0]?.toUpperCase()}
+                  </div>
+                )}
+                <span className="pd-name">{r.userName}</span>
+              </div>
+
+              <p className="pd-reply-text">{r.message}</p>
             </div>
           ))}
         </div>
 
       </div>
 
-      {/* CSS INSIDE SAME FILE */}
+      {/* CSS */}
       <style>{`
-        .cc-page {
+        .pd-wrapper {
           max-width: 720px;
           margin: auto;
-          padding: 16px;
+          padding: 24px 16px;
         }
 
-        .cc-post-card {
-          background: rgba(15, 23, 42, 0.95);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 18px;
-          margin-bottom: 18px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        /* POST CARD */
+        .pd-post {
+          background: #020617;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 20px;
+          padding: 20px;
+          margin-bottom: 20px;
+          box-shadow: 0 14px 32px rgba(0,0,0,0.35);
         }
 
-        .cc-user {
+        .pd-user {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+
+        .pd-avatar {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .pd-avatar.sm {
+          width: 34px;
+          height: 34px;
+        }
+
+        .pd-avatar-fallback {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: linear-gradient(135deg,#38bdf8,#818cf8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          color: #020617;
+        }
+
+        .pd-avatar-fallback.sm {
+          width: 34px;
+          height: 34px;
           font-size: 0.85rem;
+        }
+
+        .pd-name {
           font-weight: 600;
           color: #38bdf8;
         }
 
-        .cc-post-content {
-          margin-top: 8px;
+        .pd-content {
+          font-size: 1.05rem;
+          line-height: 1.6;
           color: #e5e7eb;
-          font-size: 1rem;
-          line-height: 1.55;
+          margin-top: 6px;
         }
 
-        .cc-reply-box {
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
+        /* REPLY BOX */
+        .pd-reply-box {
+          background: rgba(15,23,42,0.9);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 20px;
           padding: 16px;
-          margin-bottom: 20px;
+          margin-bottom: 28px;
         }
 
-        .cc-reply-box textarea {
+        .pd-reply-box textarea {
           width: 100%;
           min-height: 90px;
-          padding: 12px;
+          background: rgba(30,41,59,0.95);
+          border: 1px solid rgba(255,255,255,0.12);
           border-radius: 12px;
-          background: rgba(30, 41, 59, 0.9);
-          border: 1px solid rgba(255,255,255,0.1);
+          padding: 12px;
           color: #f8fafc;
           font-size: 0.95rem;
           outline: none;
         }
 
-        .cc-reply-box textarea:focus {
+        .pd-reply-box textarea::placeholder {
+          color: #94a3b8;
+        }
+
+        .pd-reply-box textarea:focus {
           border-color: #38bdf8;
           box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
         }
 
-        .cc-reply-box button {
+        .pd-reply-box button {
           margin-top: 12px;
-          padding: 8px 18px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #38bdf8, #818cf8);
-          border: none;
-          font-weight: 600;
-          color: #020617;
-          cursor: pointer;
-        }
-
-        .cc-reply-box button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .cc-replies h4 {
-          margin-bottom: 10px;
-          color: #e5e7eb;
-          font-size: 1rem;
-        }
-
-        .cc-reply-card {
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255,255,255,0.06);
+          width: 100%;
+          padding: 10px;
           border-radius: 14px;
+          background: linear-gradient(135deg,#38bdf8,#818cf8);
+          border: none;
+          font-weight: 700;
+          cursor: pointer;
+          color: #020617;
+        }
+
+        .pd-replies h4 {
+          margin-bottom: 14px;
+          color: #e5e7eb;
+        }
+
+        /* REPLY CARD */
+        .pd-reply-card {
+          background: rgba(15,23,42,0.75);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px;
           padding: 14px;
           margin-bottom: 12px;
+          margin-left: 28px; /* nesting */
         }
 
-        .cc-reply-user {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #a5b4fc;
-        }
-
-        .cc-reply-card p {
+        .pd-reply-text {
           margin-top: 6px;
-          font-size: 0.95rem;
-          line-height: 1.45;
           color: #e5e7eb;
+          line-height: 1.5;
         }
 
-        .cc-empty {
-          font-size: 0.85rem;
+        .pd-empty {
           color: #94a3b8;
+          font-size: 0.9rem;
         }
 
         .cc-loading {
           text-align: center;
-          padding: 30px;
+          padding: 40px;
           color: #94a3b8;
         }
 
-        /* 📱 Mobile */
         @media (max-width: 640px) {
-          .cc-page {
-            padding: 12px;
+          .pd-wrapper {
+            padding: 16px 12px;
           }
 
-          .cc-post-content {
-            font-size: 0.95rem;
+          .pd-reply-card {
+            margin-left: 16px;
           }
         }
       `}</style>
