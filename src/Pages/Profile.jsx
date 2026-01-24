@@ -273,9 +273,9 @@ const Profile = () => {
           width: 100%;
           padding: 0.55rem;
           border-radius: 10px;
-          background: rgba(255,255,255,0.08);
+          background: rgba(255, 255, 255, 0.9);
           border: none;
-          color: #fff;
+          color: #090909ec;
           outline: none;
         }
 
