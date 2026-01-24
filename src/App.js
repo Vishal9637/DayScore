@@ -11,11 +11,13 @@ import Profile from "./Pages/Profile.jsx";
 import FocusPlanner from "./Pages/FocusPlanner.jsx";
 import StudyTimer from "./Pages/StudyTimer.jsx";
 import Streak from "./Pages/Streak.jsx";
+import Leaderboard from "./Pages/Leaderboard.jsx";
 
 import CampusCirclePage from "./Pages/CampusCircle/index.jsx";
 import PostDetails from "./Pages/CampusCircle/PostDetails.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import CampusCircleGuard from "./components/CampusCircleGuard.jsx";
 
 const App = () => {
   return (
@@ -28,7 +30,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* 🔒 Protected Routes */}
+        {/* 🔒 Auth-only Routes */}
         <Route
           path="/dashboard"
           element={
@@ -74,22 +76,32 @@ const App = () => {
           }
         />
 
-        {/* 🌍 Campus Circle (Protected) */}
+        {/* 🏆 Leaderboard (Auth Required) */}
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <Leaderboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🔐 Campus Circle (AUTH + PROFILE REQUIRED) */}
         <Route
           path="/campus-circle"
           element={
-            <ProtectedRoute>
+            <CampusCircleGuard>
               <CampusCirclePage />
-            </ProtectedRoute>
+            </CampusCircleGuard>
           }
         />
 
         <Route
           path="/campus-circle/post/:id"
           element={
-            <ProtectedRoute>
+            <CampusCircleGuard>
               <PostDetails />
-            </ProtectedRoute>
+            </CampusCircleGuard>
           }
         />
 

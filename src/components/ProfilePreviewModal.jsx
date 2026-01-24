@@ -4,56 +4,46 @@ import { db } from "../firebase";
 
 const ProfilePreviewModal = ({ userId, onClose }) => {
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
 
     const fetchProfile = async () => {
-      try {
-        const snap = await getDoc(doc(db, "users", userId));
-        if (snap.exists()) {
-          setProfile(snap.data());
-        }
-      } catch (err) {
-        console.error("Profile fetch failed", err);
-      } finally {
-        setLoading(false);
-      }
+      const snap = await getDoc(doc(db, "users", userId));
+      if (snap.exists()) setProfile(snap.data());
     };
 
     fetchProfile();
   }, [userId]);
 
-  if (!userId) return null;
+  if (!userId || !profile) return null;
 
   return (
     <>
       <div className="ppm-overlay" onClick={onClose}>
-        <div className="ppm-modal" onClick={(e) => e.stopPropagation()}>
-          {loading ? (
-            <p className="ppm-loading">Loading...</p>
-          ) : profile ? (
-            <>
-              <img
-                src={profile.photoURL}
-                alt={profile.name}
-                className="ppm-avatar"
-              />
+        <div className="ppm-card" onClick={(e) => e.stopPropagation()}>
 
-              <h3 className="ppm-name">{profile.name}</h3>
+          {/* AVATAR */}
+          <div className="ppm-avatar-wrap">
+            {profile.photoURL ? (
+              <img src={profile.photoURL} className="ppm-avatar" alt="" />
+            ) : (
+              <div className="ppm-avatar-fallback">
+                {profile.name?.[0]?.toUpperCase()}
+              </div>
+            )}
+          </div>
 
-              <p className="ppm-profession">{profile.profession}</p>
+          {/* INFO */}
+          <h3 className="ppm-name">{profile.name}</h3>
+          <p className="ppm-role">{profile.profession}</p>
 
-              <span className="ppm-gender">{profile.gender}</span>
+          <span className="ppm-gender-badge">{profile.gender}</span>
 
-              <button className="ppm-close" onClick={onClose}>
-                Close
-              </button>
-            </>
-          ) : (
-            <p className="ppm-loading">Profile not found</p>
-          )}
+          {/* BUTTON */}
+          <button className="ppm-close-btn" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
 
@@ -63,81 +53,92 @@ const ProfilePreviewModal = ({ userId, onClose }) => {
           position: fixed;
           inset: 0;
           background: rgba(2,6,23,0.75);
+          backdrop-filter: blur(6px);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 9999;
-          animation: fadeIn 0.2s ease;
         }
 
-        .ppm-modal {
-          background: #020617;
+        .ppm-card {
+          background: linear-gradient(180deg, #020617, #020617);
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 22px;
-          padding: 26px 22px;
-          width: 280px;
+          width: 300px;
+          padding: 28px 22px 22px;
           text-align: center;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-          animation: scaleIn 0.25s ease;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.65);
+          position: relative;
+        }
+
+        .ppm-avatar-wrap {
+          display: flex;
+          justify-content: center;
+          margin-top: -60px;
+          margin-bottom: 10px;
+        }
+
+        .ppm-avatar,
+        .ppm-avatar-fallback {
+          width: 110px;
+          height: 110px;
+          border-radius: 50%;
+          border: 3px solid rgba(255,255,255,0.15);
+          background: #020617;
+          object-fit: cover;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: #020617;
+          background: linear-gradient(135deg,#38bdf8,#818cf8);
         }
 
         .ppm-avatar {
-          width: 96px;
-          height: 96px;
-          border-radius: 50%;
-          object-fit: cover;
-          margin-bottom: 14px;
-          border: 2px solid rgba(255,255,255,0.15);
+          background: none;
+          color: unset;
         }
 
         .ppm-name {
-          margin: 6px 0 4px;
-          font-size: 1.1rem;
+          margin-top: 6px;
+          font-size: 1.25rem;
           font-weight: 700;
           color: #e5e7eb;
         }
 
-        .ppm-profession {
-          font-size: 0.9rem;
+        .ppm-role {
+          margin-top: 2px;
+          font-size: 0.95rem;
           color: #94a3b8;
         }
 
-        .ppm-gender {
+        .ppm-gender-badge {
           display: inline-block;
-          margin-top: 6px;
+          margin-top: 12px;
+          padding: 6px 14px;
+          border-radius: 999px;
+          background: rgba(56,189,248,0.15);
+          color: #38bdf8;
           font-size: 0.8rem;
           font-weight: 600;
-          color: #38bdf8;
         }
 
-        .ppm-close {
+        .ppm-close-btn {
           margin-top: 18px;
-          padding: 8px 18px;
-          border-radius: 12px;
+          width: 100%;
+          padding: 10px;
+          border-radius: 14px;
           border: none;
           background: linear-gradient(135deg,#38bdf8,#818cf8);
           font-weight: 700;
-          cursor: pointer;
+          font-size: 0.95rem;
           color: #020617;
-        }
-
-        .ppm-loading {
-          color: #94a3b8;
-          font-size: 0.9rem;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0 }
-          to { opacity: 1 }
-        }
-
-        @keyframes scaleIn {
-          from { transform: scale(0.95) }
-          to { transform: scale(1) }
+          cursor: pointer;
         }
 
         @media (max-width: 640px) {
-          .ppm-modal {
+          .ppm-card {
             width: 90%;
           }
         }

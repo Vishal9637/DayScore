@@ -3,14 +3,22 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { listenToReplies, addReply } from "../../services/campusCircleService";
+import ProfilePreviewModal from "../../components/ProfilePreviewModal";
 
 const PostDetails = () => {
   const { id } = useParams();
+
   const [post, setPost] = useState(null);
   const [replies, setReplies] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🔥 profile preview
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  /* =========================
+     FETCH POST + REPLIES
+  ========================= */
   useEffect(() => {
     const fetchPost = async () => {
       const snap = await getDoc(doc(db, "posts", id));
@@ -22,6 +30,9 @@ const PostDetails = () => {
     return () => unsub();
   }, [id]);
 
+  /* =========================
+     ADD REPLY
+  ========================= */
   const handleReply = async () => {
     const user = auth.currentUser;
     if (!user || !message.trim()) return;
@@ -41,23 +52,37 @@ const PostDetails = () => {
     <>
       <div className="pd-wrapper">
 
-        {/* POST */}
+        {/* ================= POST ================= */}
         <div className="pd-post">
           <div className="pd-user">
-            {post.userAvatar ? (
-              <img src={post.userAvatar} className="pd-avatar" alt="" />
+
+            {/* AVATAR */}
+            {post.anonymous ? (
+              <div className="pd-avatar-anon">🔒</div>
             ) : (
-              <div className="pd-avatar-fallback">
-                {post.userName?.[0]?.toUpperCase()}
+              <div
+                className="pd-avatar-click"
+                onClick={() => post.userId && setSelectedUserId(post.userId)}
+              >
+                {post.userAvatar ? (
+                  <img src={post.userAvatar} className="pd-avatar" alt="" />
+                ) : (
+                  <div className="pd-avatar-fallback">
+                    {post.userName?.[0]?.toUpperCase()}
+                  </div>
+                )}
               </div>
             )}
-            <span className="pd-name">{post.userName}</span>
+
+            <span className="pd-name">
+              {post.anonymous ? "Anonymous" : post.userName}
+            </span>
           </div>
 
           <p className="pd-content">{post.content}</p>
         </div>
 
-        {/* REPLY BOX */}
+        {/* ================= REPLY BOX ================= */}
         <div className="pd-reply-box">
           <textarea
             placeholder="Share your experience or advice..."
@@ -69,26 +94,31 @@ const PostDetails = () => {
           </button>
         </div>
 
-        {/* REPLIES */}
+        {/* ================= REPLIES ================= */}
         <div className="pd-replies">
           <h4>Replies</h4>
 
           {replies.length === 0 && (
-            <p className="pd-empty">
-              No replies yet. Be the first 🤍
-            </p>
+            <p className="pd-empty">No replies yet. Be the first 🤍</p>
           )}
 
           {replies.map((r) => (
             <div key={r.id} className="pd-reply-card">
               <div className="pd-user">
-                {r.userAvatar ? (
-                  <img src={r.userAvatar} className="pd-avatar sm" alt="" />
-                ) : (
-                  <div className="pd-avatar-fallback sm">
-                    {r.userName?.[0]?.toUpperCase()}
-                  </div>
-                )}
+
+                <div
+                  className="pd-avatar-click"
+                  onClick={() => r.userId && setSelectedUserId(r.userId)}
+                >
+                  {r.userAvatar ? (
+                    <img src={r.userAvatar} className="pd-avatar sm" alt="" />
+                  ) : (
+                    <div className="pd-avatar-fallback sm">
+                      {r.userName?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
                 <span className="pd-name">{r.userName}</span>
               </div>
 
@@ -99,7 +129,15 @@ const PostDetails = () => {
 
       </div>
 
-      {/* CSS */}
+      {/* ================= PROFILE MODAL ================= */}
+      {selectedUserId && (
+        <ProfilePreviewModal
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
+      )}
+
+      {/* ================= CSS ================= */}
       <style>{`
         .pd-wrapper {
           max-width: 720px;
@@ -107,7 +145,6 @@ const PostDetails = () => {
           padding: 24px 16px;
         }
 
-        /* POST CARD */
         .pd-post {
           background: #020617;
           border: 1px solid rgba(255,255,255,0.08);
@@ -122,6 +159,10 @@ const PostDetails = () => {
           align-items: center;
           gap: 12px;
           margin-bottom: 10px;
+        }
+
+        .pd-avatar-click {
+          cursor: pointer;
         }
 
         .pd-avatar {
@@ -154,19 +195,30 @@ const PostDetails = () => {
           font-size: 0.85rem;
         }
 
+        .pd-avatar-anon {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: #1e293b;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.1rem;
+          color: #94a3b8;
+        }
+
         .pd-name {
           font-weight: 600;
           color: #38bdf8;
         }
 
         .pd-content {
+          margin-top: 6px;
           font-size: 1.05rem;
           line-height: 1.6;
           color: #e5e7eb;
-          margin-top: 6px;
         }
 
-        /* REPLY BOX */
         .pd-reply-box {
           background: rgba(15,23,42,0.9);
           border: 1px solid rgba(255,255,255,0.08);
@@ -183,17 +235,6 @@ const PostDetails = () => {
           border-radius: 12px;
           padding: 12px;
           color: #f8fafc;
-          font-size: 0.95rem;
-          outline: none;
-        }
-
-        .pd-reply-box textarea::placeholder {
-          color: #94a3b8;
-        }
-
-        .pd-reply-box textarea:focus {
-          border-color: #38bdf8;
-          box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
         }
 
         .pd-reply-box button {
@@ -213,14 +254,13 @@ const PostDetails = () => {
           color: #e5e7eb;
         }
 
-        /* REPLY CARD */
         .pd-reply-card {
           background: rgba(15,23,42,0.75);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 16px;
           padding: 14px;
           margin-bottom: 12px;
-          margin-left: 28px; /* nesting */
+          margin-left: 28px;
         }
 
         .pd-reply-text {
@@ -241,10 +281,6 @@ const PostDetails = () => {
         }
 
         @media (max-width: 640px) {
-          .pd-wrapper {
-            padding: 16px 12px;
-          }
-
           .pd-reply-card {
             margin-left: 16px;
           }

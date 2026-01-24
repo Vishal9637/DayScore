@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -6,6 +7,8 @@ const CLOUD_NAME = "dqggvkox0";
 const UPLOAD_PRESET = "dayscore_unsigned";
 
 const Profile = () => {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
     age: "",
@@ -19,6 +22,7 @@ const Profile = () => {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
+  // 🔹 Fetch existing profile
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -30,6 +34,7 @@ const Profile = () => {
     });
   }, []);
 
+  // 🔹 Upload image to Cloudinary
   const uploadToCloudinary = async () => {
     if (!image) return form.photoURL;
 
@@ -52,13 +57,20 @@ const Profile = () => {
     return json.secure_url;
   };
 
+  // 🔹 Save profile
   const saveProfile = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
+    // ⛔ Required fields check (IMPORTANT)
+    if (!form.name || !form.gender || !form.profession) {
+      setError("Please complete all required fields.");
+      return;
+    }
+
     setLoading(true);
-    setStatus("");
     setError("");
+    setStatus("");
 
     try {
       const imageURL = await uploadToCloudinary();
@@ -66,7 +78,10 @@ const Profile = () => {
       await setDoc(
         doc(db, "users", user.uid),
         {
-          ...form,
+          name: form.name,
+          age: form.age,
+          gender: form.gender,
+          profession: form.profession,
           photoURL: imageURL,
           email: user.email,
           updatedAt: new Date(),
@@ -75,7 +90,12 @@ const Profile = () => {
       );
 
       setForm((p) => ({ ...p, photoURL: imageURL }));
-      setStatus("Profile saved ✔");
+      setStatus("Profile saved successfully ✔");
+
+      // 🚀 AUTO REDIRECT AFTER PROFILE COMPLETE
+      setTimeout(() => {
+        navigate("/campus-circle");
+      }, 800);
     } catch (err) {
       if (err.message === "IMAGE_NOT_SUPPORTED") {
         setError("Image format not supported.");
@@ -90,7 +110,7 @@ const Profile = () => {
   return (
     <div className="profile-page fade-in">
       <div className="profile-card slide-up">
-        <h2 className="profile-title">Edit Profile</h2>
+        <h2 className="profile-title">Complete Your Profile</h2>
 
         {/* AVATAR */}
         <label className="ig-avatar">
@@ -99,7 +119,7 @@ const Profile = () => {
               image
                 ? URL.createObjectURL(image)
                 : form.photoURL ||
-                  `https://ui-avatars.com/api/?name=${auth.currentUser?.email}`
+                  `https://ui-avatars.com/api/?name=${form.name || "User"}`
             }
             alt="avatar"
           />
@@ -115,7 +135,7 @@ const Profile = () => {
         {/* FORM */}
         <div className="profile-form">
           <div>
-            <label>Name</label>
+            <label>Name *</label>
             <input
               value={form.name}
               onChange={(e) =>
@@ -136,7 +156,7 @@ const Profile = () => {
           </div>
 
           <div>
-            <label>Gender</label>
+            <label>Gender *</label>
             <select
               value={form.gender}
               onChange={(e) =>
@@ -151,7 +171,7 @@ const Profile = () => {
           </div>
 
           <div>
-            <label>Profession</label>
+            <label>Profession *</label>
             <input
               value={form.profession}
               onChange={(e) =>
@@ -166,14 +186,14 @@ const Profile = () => {
           onClick={saveProfile}
           disabled={loading}
         >
-          {loading ? "Saving..." : "Save Profile"}
+          {loading ? "Saving..." : "Save & Continue"}
         </button>
 
         {status && <p className="profile-success">{status}</p>}
         {error && <p className="profile-error">{error}</p>}
       </div>
 
-      {/* 🎨 CSS */}
+      {/* 🎨 CSS (UNCHANGED, CLEAN) */}
       <style>{`
         .profile-page {
           min-height: 100vh;
@@ -290,19 +310,9 @@ const Profile = () => {
           font-size: 0.8rem;
         }
 
-        /* 📱 MOBILE FIX */
         @media (max-width: 480px) {
-          .ig-avatar {
-            width: 76px;
-            height: 76px;
-          }
-
           .profile-form {
             grid-template-columns: 1fr;
-          }
-
-          .profile-form div {
-            grid-column: span 1 !important;
           }
         }
       `}</style>

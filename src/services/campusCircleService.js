@@ -10,15 +10,20 @@ import {
   updateDoc,
   increment,
   getDoc,
+  setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
 /* ============================
-   FETCH USER PROFILE FROM FIRESTORE
+   FETCH USER PROFILE
 ============================ */
 const getUserProfile = async (uid) => {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
+  if (!uid) {
+    return { name: "Anonymous", photoURL: null };
+  }
+
+  const snap = await getDoc(doc(db, "users", uid));
 
   if (snap.exists()) {
     const data = snap.data();
@@ -28,10 +33,7 @@ const getUserProfile = async (uid) => {
     };
   }
 
-  return {
-    name: "Student",
-    photoURL: null,
-  };
+  return { name: "Student", photoURL: null };
 };
 
 /* ============================
@@ -40,14 +42,16 @@ const getUserProfile = async (uid) => {
 export const createPost = async (user, content, anonymous) => {
   if (!user || !content.trim()) return;
 
-  const profile = await getUserProfile(user.uid);
+  const profile = anonymous
+    ? { name: "Anonymous", photoURL: null }
+    : await getUserProfile(user.uid);
 
   await addDoc(collection(db, "posts"), {
-    userId: user.uid,
-    userName: anonymous ? "Anonymous" : profile.name,
-    userAvatar: anonymous ? null : profile.photoURL,
-    content,
+    userId: anonymous ? null : user.uid,
+    userName: profile.name,
+    userAvatar: profile.photoURL,
     anonymous,
+    content: content.trim(),
     likes: 0,
     repliesCount: 0,
     createdAt: serverTimestamp(),
@@ -58,18 +62,10 @@ export const createPost = async (user, content, anonymous) => {
    LISTEN TO POSTS
 ============================ */
 export const listenToPosts = (setPosts) => {
-  const q = query(
-    collection(db, "posts"),
-    orderBy("createdAt", "desc")
-  );
+  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
 
   return onSnapshot(q, (snapshot) => {
-    setPosts(
-      snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-    );
+    setPosts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
   });
 };
 
@@ -77,7 +73,7 @@ export const listenToPosts = (setPosts) => {
    LISTEN TO REPLIES
 ============================ */
 export const listenToReplies = (postId, setReplies) => {
-  if (!postId) return;
+  if (!postId) return () => {};
 
   const q = query(
     collection(db, "replies"),
@@ -86,12 +82,7 @@ export const listenToReplies = (postId, setReplies) => {
   );
 
   return onSnapshot(q, (snapshot) => {
-    setReplies(
-      snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-    );
+    setReplies(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
   });
 };
 
@@ -99,23 +90,55 @@ export const listenToReplies = (postId, setReplies) => {
    ADD REPLY
 ============================ */
 export const addReply = async (postId, user, message) => {
-  if (!user || !postId || !message.trim()) return;
+  if (!user || !message.trim()) return;
 
   const profile = await getUserProfile(user.uid);
 
-  // 1️⃣ Add reply
   await addDoc(collection(db, "replies"), {
     postId,
     userId: user.uid,
     userName: profile.name,
     userAvatar: profile.photoURL,
-    message,
-    likes: 0,
+    message: message.trim(),
     createdAt: serverTimestamp(),
   });
 
-  // 2️⃣ Increment reply count
   await updateDoc(doc(db, "posts", postId), {
     repliesCount: increment(1),
+  });
+};
+
+/* ============================
+   TOGGLE POST LIKE ✅
+============================ */
+export const togglePostLike = async (postId, userId) => {
+  const likeRef = doc(db, "likes", `${postId}_${userId}`);
+  const postRef = doc(db, "posts", postId);
+
+  const snap = await getDoc(likeRef);
+
+  if (snap.exists()) {
+    await deleteDoc(likeRef);
+    await updateDoc(postRef, { likes: increment(-1) });
+  } else {
+    await setDoc(likeRef, {
+      postId,
+      userId,
+      createdAt: serverTimestamp(),
+    });
+    await updateDoc(postRef, { likes: increment(1) });
+  }
+};
+
+/* ============================
+   LISTEN TO LIKE STATE ✅
+============================ */
+export const listenToPostLikeState = (postId, userId, setLiked) => {
+  if (!postId || !userId) return () => {};
+
+  const likeRef = doc(db, "likes", `${postId}_${userId}`);
+
+  return onSnapshot(likeRef, (snap) => {
+    setLiked(snap.exists());
   });
 };
